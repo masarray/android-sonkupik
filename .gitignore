@@ -1,0 +1,45 @@
+# Gradle and Android build output
+.gradle/
+.kotlin/
+build/
+app/build/
+**/build/
+**/.cxx/
+**/.externalNativeBuild/
+captures/
+
+# Local Android Studio and SDK state
+.idea/
+*.iml
+local.properties
+
+# Generated packages and binaries
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.so
+
+# Local agent/session material
+.agents/
+.codex/
+CHATGPT_PATCH_NOTES.md
+prepare-chatgpt-next-patch.ps1
+PREPARE_NEXT_PATCH_CLICK.bat
+
+# Local QA screenshots captured during development
+/sonkupik_*.png
+/codex-clipboard-*.png
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
+*.log
+
+# Keep source, documentation, landing page assets, and Gradle wrapper tracked.
+!gradle/wrapper/gradle-wrapper.jar
+!docs/**
