@@ -43,7 +43,6 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Home
@@ -129,6 +128,8 @@ private val Danger = Color(0xFFFF6E8D)
 
 private enum class MainTab(val label: String) { Home("Home"), Player("Player"), Dsp("DSP"), Library("Library") }
 
+private enum class LibraryFilter(val label: String) { All("All"), Local("Local"), Imported("Imported"), Demo("Demo") }
+
 private enum class DspModule(val title: String, val subtitle: String) {
     Trim("Trim", "Output trim"),
     Bass("Smart Bass", "Low body and warmth"),
@@ -197,6 +198,7 @@ fun SonkuPikPlayerScreen() {
     var shuffleOn by remember { mutableStateOf(false) }
     var repeatOn by remember { mutableStateOf(false) }
     var enhanceOn by remember { mutableStateOf(true) }
+    var showHomeMenu by remember { mutableStateOf(false) }
     var compareSlot by remember { mutableStateOf("A") }
     var activeModule by remember { mutableStateOf(DspModule.Bass) }
 
@@ -440,6 +442,7 @@ fun SonkuPikPlayerScreen() {
                     onOpenPlayer = { tab = MainTab.Player },
                     onOpenDsp = { tab = MainTab.Dsp },
                     onOpenLibrary = { tab = MainTab.Library },
+                    onOpenMenu = { showHomeMenu = true },
                     onTrackSelect = {
                         activeTrackIndex = it
                         progress = 0f
@@ -521,6 +524,32 @@ fun SonkuPikPlayerScreen() {
                     }
                 )
             }
+
+            if (showHomeMenu) {
+                HomeOverflowSheet(
+                    onDismiss = { showHomeMenu = false },
+                    onImportAudio = {
+                        showHomeMenu = false
+                        importAudioFiles()
+                    },
+                    onScanDevice = {
+                        showHomeMenu = false
+                        requestDeviceScan()
+                    },
+                    onOpenLibrary = {
+                        showHomeMenu = false
+                        tab = MainTab.Library
+                    },
+                    onOpenDsp = {
+                        showHomeMenu = false
+                        tab = MainTab.Dsp
+                    },
+                    onOpenPlayer = {
+                        showHomeMenu = false
+                        tab = MainTab.Player
+                    }
+                )
+            }
         }
 
         BottomNav(
@@ -543,6 +572,7 @@ private fun HomePage(
     onOpenPlayer: () -> Unit,
     onOpenDsp: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenMenu: () -> Unit,
     onTrackSelect: (Int) -> Unit,
     onTogglePlay: () -> Unit,
 ) {
@@ -563,7 +593,7 @@ private fun HomePage(
                 Text(text = "Good Evening", color = TextSoft, fontSize = 13.sp)
                 Text(text = "SonKuPik Player", color = TextMain, fontSize = 27.sp, fontWeight = FontWeight.SemiBold)
             }
-            RoundIconButton(icon = Icons.Rounded.MoreHoriz, tint = TextMain, onClick = {}, size = 50.dp, iconSize = 24.dp)
+            RoundIconButton(icon = Icons.Rounded.MoreHoriz, tint = TextMain, onClick = onOpenMenu, size = 50.dp, iconSize = 24.dp)
         }
 
         Box(
@@ -683,6 +713,143 @@ private fun HomePage(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun HomeOverflowSheet(
+    onDismiss: () -> Unit,
+    onImportAudio: () -> Unit,
+    onScanDevice: () -> Unit,
+    onOpenLibrary: () -> Unit,
+    onOpenDsp: () -> Unit,
+    onOpenPlayer: () -> Unit,
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0x5A211C35))
+                .clickable { onDismiss() }
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 18.dp, vertical = 10.dp)
+                .clip(RoundedCornerShape(30.dp))
+                .background(Color(0xF7FFF8FF))
+                .border(1.dp, Color(0xE8FFFFFF), RoundedCornerShape(30.dp))
+                .clickable { }
+                .padding(18.dp)
+        ) {
+            Text(text = "Music actions", color = TextMain, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = "Add music, refresh local files, or jump to tuning.",
+                color = TextDim,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp, bottom = 10.dp)
+            )
+            HomeMenuAction(
+                icon = painterResource(R.drawable.ic_import_music),
+                title = "Import music",
+                subtitle = "Pick MP3, WAV, FLAC, or other audio files",
+                onClick = onImportAudio,
+            )
+            HomeMenuAction(
+                icon = Icons.Rounded.Search,
+                title = "Scan device music",
+                subtitle = "Refresh songs found in the phone Music folder",
+                onClick = onScanDevice,
+            )
+            HomeMenuAction(
+                icon = Icons.Rounded.LibraryMusic,
+                title = "Open library",
+                subtitle = "Browse local, imported, and built-in tracks",
+                onClick = onOpenLibrary,
+            )
+            HomeMenuAction(
+                icon = Icons.Rounded.Equalizer,
+                title = "DSP workspace",
+                subtitle = "Tune the active preset and smart protection",
+                onClick = onOpenDsp,
+            )
+            HomeMenuAction(
+                icon = Icons.Rounded.MusicNote,
+                title = "Now playing",
+                subtitle = "Return to the vinyl player",
+                onClick = onOpenPlayer,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeMenuAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFFFE3D1)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = Color(0xFF31263A), modifier = Modifier.size(22.dp))
+        }
+        Column(
+            modifier = Modifier
+                .padding(start = 13.dp)
+                .weight(1f)
+        ) {
+            Text(text = title, color = TextMain, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(text = subtitle, color = TextDim, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+        }
+    }
+}
+
+@Composable
+private fun HomeMenuAction(
+    icon: Painter,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFFFE3D1)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = Color(0xFF31263A), modifier = Modifier.size(22.dp))
+        }
+        Column(
+            modifier = Modifier
+                .padding(start = 13.dp)
+                .weight(1f)
+        ) {
+            Text(text = title, color = TextMain, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(text = subtitle, color = TextDim, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+        }
     }
 }
 
@@ -1407,57 +1574,116 @@ private fun LibraryPage(
     onScanDevice: () -> Unit,
     onTrackSelect: (Int) -> Unit,
 ) {
+    var filter by remember { mutableStateOf(LibraryFilter.All) }
+    val visibleTracks = remember(tracks, filter) {
+        tracks.mapIndexed { index, track -> index to track }.filter { (_, track) ->
+            when (filter) {
+                LibraryFilter.All -> true
+                LibraryFilter.Local -> track.sourceLabel == "Device"
+                LibraryFilter.Imported -> track.sourceLabel == "Imported"
+                LibraryFilter.Demo -> track.sourceLabel == "Built-in"
+            }
+        }
+    }
+    val localTrackCount = tracks.count { it.sourceLabel != "Built-in" }
+    val statusText = when {
+        isScanning -> "Scanning device music..."
+        localTrackCount == 0 && filter == LibraryFilter.All -> "Demo tracks are shown until you import or scan local music."
+        else -> libraryMessage
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp)
     ) {
-        Text(
-            text = "Library",
-            color = TextMain,
-            fontSize = 34.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 18.dp)
-        )
-        Text(
-            text = "Local music, imported audio, and DSP-ready playback.",
-            color = TextDim,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(top = 6.dp)
-        )
-        GlassPanel(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
-            innerPadding = 14.dp
+                .padding(top = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                LibraryActionButton(
-                    icon = Icons.Rounded.FileOpen,
-                    label = "Import Audio",
-                    subtitle = "MP3, WAV, FLAC",
-                    onClick = onImportAudio,
-                    modifier = Modifier.weight(1f)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Library",
+                    color = TextMain,
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
-                Spacer(Modifier.width(12.dp))
-                LibraryActionButton(
-                    icon = Icons.Rounded.Search,
-                    label = "Scan Device",
-                    subtitle = if (isScanning) "Scanning..." else "Music folder",
-                    onClick = onScanDevice,
-                    modifier = Modifier.weight(1f)
+                Text(
+                    text = "Local music and imported audio.",
+                    color = TextDim,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
-            Text(
-                text = libraryMessage,
-                color = if (isScanning) Peach else TextDim,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(top = 12.dp)
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                RoundPainterButton(
+                    icon = painterResource(R.drawable.ic_import_music),
+                    tint = TextMain,
+                    onClick = onImportAudio,
+                    background = Color(0xE8FFF8FF),
+                    size = 46.dp,
+                    iconSize = 21.dp
+                )
+                RoundIconButton(
+                    icon = Icons.Rounded.Search,
+                    tint = if (isScanning) PeachStrong else TextMain,
+                    onClick = onScanDevice,
+                    background = Color(0xE8FFF8FF),
+                    size = 46.dp,
+                    iconSize = 21.dp
+                )
+            }
         }
 
-        tracks.forEachIndexed { index, track ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            LibraryFilter.entries.forEach { item ->
+                LibraryFilterChip(
+                    label = when (item) {
+                        LibraryFilter.All -> "All ${tracks.size}"
+                        LibraryFilter.Local -> "Local ${tracks.count { it.sourceLabel == "Device" }}"
+                        LibraryFilter.Imported -> "Imported ${tracks.count { it.sourceLabel == "Imported" }}"
+                        LibraryFilter.Demo -> "Demo ${tracks.count { it.sourceLabel == "Built-in" }}"
+                    },
+                    active = filter == item,
+                    onClick = { filter = item }
+                )
+            }
+        }
+
+        Text(
+            text = statusText,
+            color = if (isScanning) PeachStrong else TextDim,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+
+        if (visibleTracks.isEmpty()) {
+            GlassPanel(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                innerPadding = 18.dp
+            ) {
+                Text(text = "No tracks here yet", color = TextMain, fontSize = 17.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    text = "Use the top actions to import audio or scan the phone music folder.",
+                    color = TextDim,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        }
+
+        visibleTracks.forEach { (index, track) ->
             GlassPanel(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1500,35 +1726,26 @@ private fun LibraryPage(
 }
 
 @Composable
-private fun LibraryActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun LibraryFilterChip(
     label: String,
-    subtitle: String,
+    active: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color(0x2FFFFFFF))
-            .border(1.dp, Color(0x42FFFFFF), RoundedCornerShape(22.dp))
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (active) PeachStrong else Color(0x74FFF8FF))
+            .border(1.dp, if (active) Color(0x44FFFFFF) else Color(0x90FFFFFF), RoundedCornerShape(18.dp))
             .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Peach2),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = label, tint = Color(0xFF33273A), modifier = Modifier.size(20.dp))
-        }
-        Column(modifier = Modifier.padding(start = 10.dp)) {
-            Text(text = label, color = TextMain, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-            Text(text = subtitle, color = TextDim, fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
-        }
+        Text(
+            text = label,
+            color = if (active) Color(0xFF31263A) else TextSoft,
+            fontSize = 12.sp,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium
+        )
     }
 }
 
@@ -1689,6 +1906,28 @@ private fun LargePlayButton(
 @Composable
 private fun RoundIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    background: Color = Color(0x72FFFFFF),
+    size: androidx.compose.ui.unit.Dp = 54.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 28.dp,
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(background)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
+    }
+}
+
+@Composable
+private fun RoundPainterButton(
+    icon: Painter,
     tint: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
